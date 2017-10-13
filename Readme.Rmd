@@ -149,7 +149,7 @@ x2<-na.omit(train[(dYear==2013 & Species2!='CULEX ERRATICUS'),])
 
 The simplest model we try is the logistic regression.
 ```{r logistic1}
-fitCv3<-glm(WnvPresent ~ dMonth + Block + Species2 + DewPoint + NumMosquitos + Latitude*Longitude + DewPoint*Sunset + AvgSpeed + WetBulb + Tmax*Tmin*PrecipTotal, data = x1, family = "binomial")
+fitCv3<-glm(WnvPresent ~ dMonth + Block + Species2 + DewPoint + NumMosquitos + Latitude*Longitude + DewPoint*Sunset + AvgSpeed + WetBulb + Tmax_Tmin*PrecipTotal, data = x1, family = "binomial")
 p2<-predict(fitCv3, newdata = x2, type = "response")
 ## check for a reasonable AUC of the model against unseen data (2011)
 summary(fitCv3)
@@ -163,7 +163,7 @@ We also only have 312 cases. Hence we create a case-control sample and run a log
 set.seed(12345)
 x3 <- bind_rows(x1 %>% filter(WnvPresent==1), sample_n(x1 %>% filter(WnvPresent!=1), size = dim(x1 %>% filter(WnvPresent==1))[1]))
 
-fitCv3<-glm(WnvPresent ~ dMonth + Species2 + Block + DewPoint + NumMosquitos + Latitude*Longitude + DewPoint*Sunset + AvgSpeed + WetBulb + Tmax*Tmin*PrecipTotal, data = x3, family = "binomial")
+fitCv3<-glm(WnvPresent ~ dMonth + Species2 + Block + DewPoint + NumMosquitos + Latitude*Longitude + DewPoint*Sunset + AvgSpeed + WetBulb + Tmax_Tmin*PrecipTotal, data = x3, family = "binomial")
 p2<-predict(fitCv3, newdata = x2, type = "response")
 ## check for a reasonable AUC of the model against unseen data (2011)
 summary(fitCv3)

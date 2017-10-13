@@ -304,58 +304,54 @@ The simplest model we try is the logistic regression.
 ## Call:
 ## glm(formula = WnvPresent ~ dMonth + Block + Species2 + DewPoint + 
 ##     NumMosquitos + Latitude * Longitude + DewPoint * Sunset + 
-##     AvgSpeed + WetBulb + Tmax * Tmin * PrecipTotal, family = "binomial", 
+##     AvgSpeed + WetBulb + Tmax_Tmin * PrecipTotal, family = "binomial", 
 ##     data = x1)
 ## 
 ## Deviance Residuals: 
 ##     Min       1Q   Median       3Q      Max  
-## -1.0692  -0.2769  -0.1578  -0.0634   3.4106  
+## -1.1294  -0.3042  -0.1690  -0.0761   3.3565  
 ## 
 ## Coefficients:
 ##                            Estimate Std. Error z value Pr(>|z|)    
-## (Intercept)               1.744e+05  2.953e+04   5.905 3.54e-09 ***
-## dMonth06                  1.957e+00  1.848e+03   0.001  0.99915    
-## dMonth07                  1.810e+01  1.796e+03   0.010  0.99196    
-## dMonth08                  2.033e+01  1.796e+03   0.011  0.99097    
-## dMonth09                  1.970e+01  1.796e+03   0.011  0.99125    
-## dMonth10                  2.010e+01  1.796e+03   0.011  0.99107    
-## Block                    -2.874e-03  3.003e-03  -0.957  0.33866    
-## Species2CULEX RESTUANS   -7.734e-01  2.638e-01  -2.931  0.00337 ** 
-## Species2CULEX PIPIENS     7.080e-02  1.574e-01   0.450  0.65287    
-## Species2CULEX SALINARIUS -1.749e+01  1.908e+03  -0.009  0.99268    
-## Species2CULEX TERRITANS  -1.753e+01  1.179e+03  -0.015  0.98814    
-## Species2CULEX TARSALIS   -1.702e+01  6.826e+03  -0.002  0.99801    
-## DewPoint                  1.797e+00  7.866e-01   2.284  0.02236 *  
-## NumMosquitos             -4.455e-05  6.315e-04  -0.071  0.94376    
-## Latitude                 -4.183e+03  7.044e+02  -5.939 2.87e-09 ***
-## Longitude                 1.988e+03  3.361e+02   5.915 3.32e-09 ***
-## Sunset                    4.485e-02  2.465e-02   1.820  0.06878 .  
-## AvgSpeed                 -5.894e-02  5.055e-02  -1.166  0.24368    
-## WetBulb                  -8.260e-01  2.997e-01  -2.756  0.00586 ** 
-## Tmax                     -2.068e-01  1.486e-01  -1.392  0.16399    
-## Tmin                     -1.640e-01  2.106e-01  -0.779  0.43605    
-## PrecipTotal              -9.389e+02  1.971e+02  -4.763 1.91e-06 ***
-## Latitude:Longitude       -4.768e+01  8.031e+00  -5.936 2.91e-09 ***
-## DewPoint:Sunset          -6.826e-04  4.028e-04  -1.695  0.09010 .  
-## Tmax:Tmin                 4.173e-03  2.375e-03   1.757  0.07887 .  
-## Tmax:PrecipTotal          1.088e+01  2.312e+00   4.705 2.54e-06 ***
-## Tmin:PrecipTotal          1.301e+01  2.739e+00   4.748 2.06e-06 ***
-## Tmax:Tmin:PrecipTotal    -1.506e-01  3.214e-02  -4.687 2.77e-06 ***
+## (Intercept)               1.787e+05  2.834e+04   6.305 2.88e-10 ***
+## dMonth06                 -8.377e-01  1.201e+03  -0.001  0.99944    
+## dMonth07                  1.467e+01  1.136e+03   0.013  0.98969    
+## dMonth08                  1.610e+01  1.136e+03   0.014  0.98869    
+## dMonth09                  1.507e+01  1.136e+03   0.013  0.98942    
+## dMonth10                  1.374e+01  1.136e+03   0.012  0.99035    
+## Block                    -2.305e-03  2.942e-03  -0.783  0.43341    
+## Species2CULEX RESTUANS   -8.100e-01  2.615e-01  -3.098  0.00195 ** 
+## Species2CULEX PIPIENS     1.468e-01  1.553e-01   0.945  0.34469    
+## Species2CULEX SALINARIUS -1.648e+01  1.195e+03  -0.014  0.98899    
+## Species2CULEX TERRITANS  -1.647e+01  7.394e+02  -0.022  0.98223    
+## Species2CULEX TARSALIS   -1.598e+01  4.134e+03  -0.004  0.99692    
+## DewPoint                  5.609e-01  4.837e-01   1.160  0.24623    
+## NumMosquitos              2.040e-04  5.742e-04   0.355  0.72230    
+## Latitude                 -4.284e+03  6.767e+02  -6.331 2.44e-10 ***
+## Longitude                 2.037e+03  3.229e+02   6.308 2.83e-10 ***
+## Sunset                    7.406e-03  1.675e-02   0.442  0.65829    
+## AvgSpeed                 -1.302e-01  4.328e-02  -3.008  0.00263 ** 
+## WetBulb                  -6.660e-02  1.032e-01  -0.645  0.51878    
+## Tmax_Tmin                -3.725e-02  2.888e-02  -1.290  0.19719    
+## PrecipTotal              -2.196e+00  1.008e+00  -2.180  0.02926 *  
+## Latitude:Longitude       -4.882e+01  7.715e+00  -6.327 2.49e-10 ***
+## DewPoint:Sunset          -2.357e-04  2.537e-04  -0.929  0.35288    
+## Tmax_Tmin:PrecipTotal     1.549e-01  6.356e-02   2.438  0.01479 *  
 ## ---
 ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 ## 
 ## (Dispersion parameter for binomial family taken to be 1)
 ## 
 ##     Null deviance: 1824.6  on 5615  degrees of freedom
-## Residual deviance: 1428.8  on 5588  degrees of freedom
+## Residual deviance: 1485.2  on 5592  degrees of freedom
 ##   (1097 observations deleted due to missingness)
-## AIC: 1484.8
+## AIC: 1533.2
 ## 
-## Number of Fisher Scoring iterations: 19
+## Number of Fisher Scoring iterations: 18
 ```
 
 ```
-## Area under the curve: 0.7834
+## Area under the curve: 0.7908
 ```
 
 ![](Readme_files/figure-html/logistic1-1.png)<!-- -->
@@ -372,58 +368,54 @@ We also only have 312 cases. Hence we create a case-control sample and run a log
 ## Call:
 ## glm(formula = WnvPresent ~ dMonth + Species2 + Block + DewPoint + 
 ##     NumMosquitos + Latitude * Longitude + DewPoint * Sunset + 
-##     AvgSpeed + WetBulb + Tmax * Tmin * PrecipTotal, family = "binomial", 
+##     AvgSpeed + WetBulb + Tmax_Tmin * PrecipTotal, family = "binomial", 
 ##     data = x3)
 ## 
 ## Deviance Residuals: 
-##     Min       1Q   Median       3Q      Max  
-## -2.4738  -0.7820   0.0000   0.7041   2.1456  
+##      Min        1Q    Median        3Q       Max  
+## -2.17509  -0.81493  -0.00002   0.77532   2.05314  
 ## 
 ## Coefficients:
-##                            Estimate Std. Error z value Pr(>|z|)    
-## (Intercept)               1.298e+05  5.508e+04   2.357 0.018416 *  
-## dMonth06                  9.877e-01  6.177e+03   0.000 0.999872    
-## dMonth07                  2.033e+01  6.120e+03   0.003 0.997350    
-## dMonth08                  2.288e+01  6.120e+03   0.004 0.997017    
-## dMonth09                  2.301e+01  6.120e+03   0.004 0.997000    
-## dMonth10                  2.459e+01  6.120e+03   0.004 0.996794    
-## Species2CULEX RESTUANS   -5.318e-01  3.887e-01  -1.368 0.171281    
-## Species2CULEX PIPIENS     5.180e-02  2.909e-01   0.178 0.858662    
-## Species2CULEX SALINARIUS -1.992e+01  4.687e+03  -0.004 0.996609    
-## Species2CULEX TERRITANS  -1.853e+01  3.838e+03  -0.005 0.996148    
-## Species2CULEX TARSALIS   -1.878e+01  1.075e+04  -0.002 0.998606    
-## Block                    -3.850e-03  5.255e-03  -0.733 0.463755    
-## DewPoint                  2.370e+00  1.190e+00   1.992 0.046407 *  
-## NumMosquitos              1.220e-03  2.237e-03   0.546 0.585342    
-## Latitude                 -3.120e+03  1.308e+03  -2.386 0.017034 *  
-## Longitude                 1.480e+03  6.242e+02   2.371 0.017755 *  
-## Sunset                    6.386e-02  3.789e-02   1.685 0.091919 .  
-## AvgSpeed                 -8.777e-02  7.752e-02  -1.132 0.257549    
-## WetBulb                  -1.166e+00  4.663e-01  -2.500 0.012414 *  
-## Tmax                     -2.859e-01  2.312e-01  -1.236 0.216325    
-## Tmin                     -2.427e-01  3.277e-01  -0.741 0.458894    
-## PrecipTotal              -1.046e+03  3.155e+02  -3.317 0.000910 ***
-## Latitude:Longitude       -3.554e+01  1.491e+01  -2.383 0.017166 *  
-## DewPoint:Sunset          -8.652e-04  6.272e-04  -1.379 0.167759    
-## Tmax:Tmin                 5.866e-03  3.549e-03   1.653 0.098313 .  
-## Tmax:PrecipTotal          1.225e+01  3.766e+00   3.252 0.001147 ** 
-## Tmin:PrecipTotal          1.456e+01  4.361e+00   3.338 0.000844 ***
-## Tmax:Tmin:PrecipTotal    -1.704e-01  5.203e-02  -3.275 0.001057 ** 
+##                            Estimate Std. Error z value Pr(>|z|)   
+## (Intercept)               1.527e+05  5.172e+04   2.952  0.00316 **
+## dMonth06                 -6.018e-01  4.536e+03   0.000  0.99989   
+## dMonth07                  1.683e+01  4.424e+03   0.004  0.99696   
+## dMonth08                  1.856e+01  4.424e+03   0.004  0.99665   
+## dMonth09                  1.843e+01  4.424e+03   0.004  0.99668   
+## dMonth10                  1.766e+01  4.424e+03   0.004  0.99681   
+## Species2CULEX RESTUANS   -6.123e-01  3.662e-01  -1.672  0.09452 . 
+## Species2CULEX PIPIENS     1.393e-01  2.781e-01   0.501  0.61629   
+## Species2CULEX SALINARIUS -1.832e+01  2.925e+03  -0.006  0.99500   
+## Species2CULEX TERRITANS  -1.770e+01  2.364e+03  -0.007  0.99402   
+## Species2CULEX TARSALIS   -1.729e+01  6.523e+03  -0.003  0.99789   
+## Block                    -2.129e-03  5.099e-03  -0.417  0.67633   
+## DewPoint                  8.801e-01  7.198e-01   1.223  0.22142   
+## NumMosquitos              1.800e-03  2.629e-03   0.685  0.49365   
+## Latitude                 -3.666e+03  1.231e+03  -2.978  0.00291 **
+## Longitude                 1.739e+03  5.875e+02   2.960  0.00307 **
+## Sunset                    2.163e-02  2.416e-02   0.895  0.37063   
+## AvgSpeed                 -1.534e-01  6.877e-02  -2.231  0.02569 * 
+## WetBulb                  -2.066e-01  1.577e-01  -1.310  0.19017   
+## Tmax_Tmin                -5.043e-02  4.620e-02  -1.092  0.27501   
+## PrecipTotal              -2.423e+00  1.948e+00  -1.244  0.21348   
+## Latitude:Longitude       -4.175e+01  1.404e+01  -2.974  0.00294 **
+## DewPoint:Sunset          -3.432e-04  3.749e-04  -0.915  0.35998   
+## Tmax_Tmin:PrecipTotal     1.386e-01  1.187e-01   1.168  0.24285   
 ## ---
 ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 ## 
 ## (Dispersion parameter for binomial family taken to be 1)
 ## 
 ##     Null deviance: 601.61  on 433  degrees of freedom
-## Residual deviance: 390.35  on 406  degrees of freedom
+## Residual deviance: 419.34  on 410  degrees of freedom
 ##   (94 observations deleted due to missingness)
-## AIC: 446.35
+## AIC: 467.34
 ## 
-## Number of Fisher Scoring iterations: 18
+## Number of Fisher Scoring iterations: 17
 ```
 
 ```
-## Area under the curve: 0.7853
+## Area under the curve: 0.7884
 ```
 
 ![](Readme_files/figure-html/casecontrol-logis-1.png)<!-- -->
