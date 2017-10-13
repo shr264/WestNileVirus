@@ -1,0 +1,224 @@
+---
+title: "West Nile Virus in Chicago"
+author: "Syed Rahman"
+date: "10/9/2017"
+output:
+  html_document:
+    keep_md: true
+---
+
+```{r setup, include=FALSE}
+setwd('/Users/syedrahman/Documents/Fall2017/SparkBeyond/west_nile/input')
+knitr::opts_chunk$set(echo = FALSE)
+library(knitr)
+library(Metrics)
+library(data.table)
+library(dplyr)
+library(rgdal)
+library(mgcv)
+library(xgboost)
+library(randomForest)
+library(mlbench)
+library(caret)
+library(plotROC)
+library(pROC)
+library(ggROC)
+library(ggmap)
+library(mapproj)
+train <- fread("train.csv")
+weather <- fread("weather.csv")
+ggroc <- function(roc, showAUC = TRUE, interval = 0.2, breaks = seq(0, 1, interval)){
+  require(pROC)
+  if(class(roc) != "roc")
+    simpleError("Please provide roc object from pROC package")
+  plotx <- rev(roc$specificities)
+  ploty <- rev(roc$sensitivities)
+  
+  ggplot(NULL, aes(x = plotx, y = ploty)) +
+    geom_segment(aes(x = 0, y = 1, xend = 1,yend = 0), alpha = 0.5) + 
+    geom_step() +
+    scale_x_reverse(name = "Specificity",limits = c(1,0), breaks = breaks, expand = c(0.001,0.001)) + 
+    scale_y_continuous(name = "Sensitivity", limits = c(0,1), breaks = breaks, expand = c(0.001, 0.001)) +
+    theme(axis.ticks = element_line(color = "grey80")) +
+    coord_equal() + 
+    annotate("text", x = interval/2, y = interval/2, vjust = 0, label = paste("AUC =",sprintf("%.3f",roc$auc)))
+}
+
+```
+
+## West Nile Virus
+
+West Nile virus is most commonly spread to humans through infected mosquitos. Around 20% of people who become infected with the virus develop symptoms ranging from a persistent fever, to serious neurological illnesses that can result in death. 
+
+We want to understand what factors make drive mosquito populations and the presence of West Nile Virus, and how the City of Chicago can make decisions to minimize the number of people affected by the virus.
+
+## Data
+
+  The data comes from <https://www.kaggle.com/c/predict-west-nile-virus/data>.
+
+I have used the training dataset
+```{r train, echo = FALSE, results = 'asis'}
+kable(head(train))
+```
+
+and the weather dataset
+```{r weather, echo = FALSE, results = 'asis'}
+kable(head(weather))
+```
+
+
+## Data Exploration
+
+First we merge the weather data with the train data based on date. From the date, we extract further information such as day in year and month which we will use with our models. Some other varaibles that could affect mosquito behavior is Tmax-Tmin and duration of sunlight, which are also created and added to the dataset. 
+
+```{r dataprep}
+weather1 <- weather %>%                              # Take weather data.frame and send it to select function.
+    select( Date:Tmin, DewPoint, WetBulb, Heat, Cool, PrecipTotal, ResultSpeed, ResultDir, AvgSpeed) %>%               # Selecting only interesting columns. Result will be sent further.
+        mutate_each(funs(as.numeric), -Date) %>%    # Applying as.numeric to every (but not Date) columns.
+            mutate(Date = as.Date(Date)) %>%        # applying as.Date to Date column
+                group_by(Date) %>%                  #Grouping by date to summarise
+                    summarise_each(funs(mean))      # And take mean for every date for (average of two stations)
+
+weather2 <- weather %>%
+    filter(Station==1) %>%
+    select(Date,Sunrise, Sunset) %>%
+    mutate_each(funs(as.numeric), -Date) %>%
+    mutate(Date = as.Date(Date)) 
+
+weather3 <- full_join(weather1, weather2, by = "Date")
+
+train <- train %>%
+    mutate(Date = as.Date(Date)) %>%    # Transforming Date column to date format.
+    left_join(weather3, by="Date")   # Joining our data frames by Date column.
+
+setDT(train)
+
+vSpecies<-c(as.character(train$Species))
+vSpecies[vSpecies=="UNSPECIFIED CULEX"]<-"CULEX ERRATICUS"
+vSpecies<-factor(vSpecies,levels=unique(vSpecies))
+
+train[,Species2:=factor(vSpecies[1:nrow(train)],levels=unique(vSpecies))]
+
+## also add some fields for components of the date using simple substrings
+train[,dDay:=factor(substr(train$Date,9,10),levels=1:31)]
+train[,dDay_num:=as.numeric(dDay)]
+train[,dMonth:=substr(train$Date,6,7)]
+train[,dMonth_num:=as.numeric(dMonth)]
+train[,dYear:=substr(train$Date,1,4)]
+train[,Lat:=project(cbind(train$Latitude,train$Longitude),"+proj=utm")[Latitude]]
+train[,Long:=project(cbind(train$Latitude,train$Longitude),"+proj=utm")[Longitude]]
+train[,dayofyear:=as.numeric(yday(train$Date))]
+train[,Tmax_Tmin:=Tmax-Tmin]
+train[,Sunset_Sunrise:=Sunset-Sunrise]
+```
+
+Then we check out some conditional probabilities to see what factors seem to have a large effect.
+
+```{r condprob}
+train[,mean(WnvPresent),by="Species2"][order(V1)]  
+train[,mean(WnvPresent),by="dMonth"][order(V1)]
+latlongwnv = as.data.frame(train[,mean(WnvPresent),by=c("Latitude","Longitude")][order(V1)])
+latlongwnv 
+```
+
+We also look at correlations between the numeric variables as we want to avoid using variables with a very high correlation.
+
+```{r cor}
+x = as.data.frame(train)
+
+### drop some highly correlated varaibles
+kable(cor(x[sapply(x, is.numeric)]))
+```
+
+Then we merge the rows where mosquito count is equal to 50 with the following rows provided it is the same traps.
+
+```{r mergetrain}
+train <- train[, list(NumMosquitos = sum(NumMosquitos)), by = setdiff(colnames(train),'NumMosquitos')]
+```
+
+## Presence of West Nile Virus
+
+We use 2013 as the test set and the prior years as the training set. We use Sunset and not the others because Sunset and duration of sunlight is highly correlated, but including them in the model didn't make much sense. 
+
+```{r traintest, echo = TRUE}
+### Start modeling
+## use 2013 as a cross validation year; x1 will include the other three years; x2 will include 2013, factor Species2 has new levels CULEX ERRATICUS, so remove those too
+x1<-train[dYear!=2013,]
+x2<-na.omit(train[(dYear==2013 & Species2!='CULEX ERRATICUS'),])
+```
+
+The simplest model we try is the logistic regression.
+```{r logistic1}
+fitCv3<-glm(WnvPresent ~ dMonth + Block + Species2 + DewPoint + NumMosquitos + Latitude*Longitude + DewPoint*Sunset + AvgSpeed + WetBulb + Tmax*Tmin*PrecipTotal, data = x1, family = "binomial")
+p2<-predict(fitCv3, newdata = x2, type = "response")
+## check for a reasonable AUC of the model against unseen data (2011)
+summary(fitCv3)
+auc(x2$WnvPresent,p2)
+ggroc(roc(x2$WnvPresent, p2))
+```
+
+We also only have 312 cases. Hence we create a case-control sample and run a logistic regression on that.
+
+```{r casecontrol-logis}
+set.seed(12345)
+x3 <- bind_rows(x1 %>% filter(WnvPresent==1), sample_n(x1 %>% filter(WnvPresent!=1), size = dim(x1 %>% filter(WnvPresent==1))[1]))
+
+fitCv3<-glm(WnvPresent ~ dMonth + Species2 + Block + DewPoint + NumMosquitos + Latitude*Longitude + DewPoint*Sunset + AvgSpeed + WetBulb + Tmax*Tmin*PrecipTotal, data = x3, family = "binomial")
+p2<-predict(fitCv3, newdata = x2, type = "response")
+## check for a reasonable AUC of the model against unseen data (2011)
+summary(fitCv3)
+auc(x2$WnvPresent,p2)
+ggroc(roc(x2$WnvPresent, p2))
+```
+
+This actually does a little bit worse. Hence, we stick to using the entire sample. We will fit a few additional models to compare the performance of our logistic regression. The first is a GAM.
+
+```{r GAM}
+fitGam<-gam(WnvPresent ~ dMonth + Species2 + s(Block) + s(NumMosquitos) + s(AvgSpeed) + s(WetBulb) + te(Tmax_Tmin,PrecipTotal, d=c(1,1),k = c(9,9), bs = c('tp','tp')) + te(DewPoint,Sunset,d=c(1,1),k = c(9,9), bs = c('tp','tp')) + te(Lat,Long,dayofyear,d=c(2,1), k = c(55,9), bs = c('tp','cc')) ,knots = list("dayofyear" = c(0,365)), data = x1, family = "binomial")
+p2<-predict(fitGam, newdata = x2, type = "response")
+## check for a reasonable AUC of the model against unseen data (2011)
+summary(fitGam)
+auc(x2$WnvPresent,p2)
+ggroc(roc(x2$WnvPresent, p2))
+```
+
+To study the interaction effects, we look at
+```{r GAM2}
+plot(fitGam)
+```
+
+Finally, we run a random forest to see how our models are doing.
+```{r RF}
+formula <-as.factor(WnvPresent)~dMonth + Species2 + Block + DewPoint + NumMosquitos + Latitude + Longitude + AvgSpeed + WetBulb + Tmax_Tmin + PrecipTotal + DewPoint + Sunset
+fit.rf <- randomForest(formula, data=x1, ntree=100,na.action=na.exclude)
+p2<-predict(fit.rf, newdata = x2, type = "prob")[,2]
+auc(x2$WnvPresent,p2)
+ggroc(roc(x2$WnvPresent, p2))
+```
+
+Oddly enough, the GAM does better than the random forest. 
+
+## Number of Mosquitos
+
+In the final stage we look at the factors that determine the number of mosquitos, since our best performing model picked that as a statistically significant variable. We fit two models - a linear regression and a possion regresison - and compare their performance using MSE.   
+
+```{r NumMosq}
+fitNM <- lm(NumMosquitos~dMonth + Block + Species2 + Latitude*Longitude + AvgSpeed + WetBulb + Tmax_Tmin*PrecipTotal + DewPoint*Sunset*Sunrise, data = x1)
+p2 <- predict(fitNM,newdata = na.omit(x2))
+summary(fitNM)
+regrmse = mse(x2$NumMosquitos,p2)
+
+### poisson regression
+fitNM1 <- glm(NumMosquitos~dMonth + Block + Species2 + Latitude*Longitude + AvgSpeed + WetBulb + Tmax_Tmin*PrecipTotal + DewPoint*Sunset*Sunrise, data = x1, family = "poisson")
+p2 <- predict(fitNM1,newdata = x2)
+summary(fitNM1)
+poissonmse = mse(x2$NumMosquitos,p2)
+
+Methods = c('Linear','Poisson')
+Mses = c(regrmse,poissonmse)
+mydata <-data.frame(Methods, Mses)
+p <-ggplot(mydata, aes(Methods, Mses))
+p + geom_bar(stat = "identity", aes(fill = Methods))
+```
+
+As we can see, in terms of MSE, the linear model does a bit better.
